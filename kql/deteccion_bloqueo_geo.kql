@@ -1,0 +1,5 @@
+// Regla para detectar intentos bloqueados por Acceso Condicional (Error 53003)
+SigninLogs
+| where ResultType == 53003
+| project TimeGenerated, UserPrincipalName, UserId, AppDisplayName, IPAddress, Location, ResultType, ResultDescription, CorrelationId
+| order by TimeGenerated desc
