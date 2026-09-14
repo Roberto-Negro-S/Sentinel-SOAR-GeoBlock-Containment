@@ -38,6 +38,9 @@ Primero configuré las defensas para impedir que se pueda iniciar sesión desde 
   * **Condición:** Si la conexión viene de las ubicaciones de la lista `High-Risk-Threat-Countries`.
   * **Acción:** Bloquear el acceso (*Block access*).
 
+
+![Texto descriptivo](Imagenes/02-politica-acceso-condicional.png)
+
 ---
 
 ### 2. Detección y creación del incidente en Microsoft Sentinel
@@ -51,3 +54,49 @@ Para que Sentinel se entere del bloqueo y pueda reaccionar:
   SigninLogs
   | where ResultType == 53003
   | project TimeGenerated, UserPrincipalName, IPAddress, Location, AppDisplayName, ResultType
+
+![Texto descriptivo](Imagenes/03-kql-signinlogs-53003.png)
+
+3. Automatización de la respuesta con Azure Logic Apps
+Aquí es donde entra la parte de SOAR para reaccionar al ataque:
+
+Creé una Logic App llamada Playbook-RevokeUserSessions-HighRiskGeo.
+
+Disparador: Microsoft Sentinel incident (se activa cada vez que se genera un incidente nuevo).
+
+Obtención de cuentas: Usé la acción Entities - Get Accounts de Sentinel para extraer qué usuario estaba involucrado.
+
+Deshabilitar la cuenta (Update user):
+Aquí me encontré un detalle clave: Sentinel entrega el usuario separado en dos trozos: Name (el alias) y UPNSuffix (el dominio). Como la API de Entra ID necesita el correo completo (UPN) y sin espacios para encontrarlo, usé esta expresión en el campo:
+
+Plaintext
+concat(items('For_each')?['Name'], '@', items('For_each')?['UPNSuffix'])
+Y en los parámetros avanzados cambié Account Enabled a No.
+
+Aviso al SOC por correo (Send an email V2):
+Añadí el paso de envío de correo a la cuenta del SOC (soc@rnssc200.onmicrosoft.com), incluyendo el usuario concatenado, el título del incidente, la gravedad y el enlace para ir directo a la consola de Azure.
+
+![Texto descriptivo](Imagenes/06-diseño-logic-app.png)
+
+🧪 Pruebas y validación en directo
+Para comprobar que todo el engranaje funcionaba, hice una simulación de ataque real:
+
+El ataque simulado: Me conecté a una VPN apuntando a Rusia e intenté iniciar sesión con la cuenta usuario@rnssc200.onmicrosoft.com.
+
+El bloqueo: Entra ID rechazó el inicio de sesión mostrando en pantalla el mensaje de política de Acceso Condicional (Error 53003).
+
+El incidente: En cuanto el evento llegó a SigninLogs, Sentinel ejecutó la regla KQL y abrió el incidente SecOps - Blocked Sign-in from High Risk Country con severidad Alta.
+
+La respuesta automática:
+
+La Logic App se ejecutó en 2.25 segundos con estado Succeeded.
+
+![Texto descriptivo](Imagenes/07-ejecucion-exitosa.png)
+
+Fui a comprobar la cuenta de Usuario en Entra ID y ya aparecía con Account status: Disabled.
+
+![Texto descriptivo](Imagenes/08-usuario-deshabilitado.png)
+
+En el buzón de Outlook del SOC entró el correo de aviso con todos los datos bien formateados.
+
+![Texto descriptivo](Imagenes/09-correo-recibido-soc.png)
