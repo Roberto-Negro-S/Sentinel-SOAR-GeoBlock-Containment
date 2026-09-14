@@ -29,6 +29,8 @@ Primero configuré las defensas para impedir que se pueda iniciar sesión desde 
 * **Creación de la lista de países (Named Locations):**
   Fui a *Entra ID > Conditional Access > Named locations* y creé una lista llamada `High-Risk-Threat-Countries`. Elegí que localizara por dirección IP, incluí países desconocidos y seleccioné países críticos habituales en ciberataques (Rusia, China, Corea del Norte e Irán).
 
+![Texto descriptivo](Imagenes/01-named-locations.png)
+
 * **Creación de la política de Acceso Condicional:**
   En *Conditional Access > Policies*, creé la política para aplicar el bloqueo:
   * **Usuarios:** Todos los usuarios (*All users*).
