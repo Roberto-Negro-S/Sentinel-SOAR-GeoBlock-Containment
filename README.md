@@ -57,7 +57,7 @@ Para que Sentinel se entere del bloqueo y pueda reaccionar:
 
 ![Texto descriptivo](Imagenes/03-kql-signinlogs-53003.png)
 
-3. Automatización de la respuesta con Azure Logic Apps
+### 3. Automatización de la respuesta con Azure Logic Apps
 Aquí es donde entra la parte de SOAR para reaccionar al ataque:
 
 Creé una Logic App llamada Playbook-RevokeUserSessions-HighRiskGeo.
